@@ -230,8 +230,7 @@ while not done: #game loop
                                 drawTetrisBlocks(colour['WHITE'], x, y_coords[y])
                         pygame.display.update()
                         pygame.time.wait(200)
-
-                    for row in win_rows:
+                    for row in reversed(win_rows):
                         for x in range(row, 0, -1):
                             game_state[x] = game_state[x - 1]
 

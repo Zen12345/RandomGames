@@ -1,2 +1,4 @@
-for x in range(9, -1, -1):
-    print(x)
+a = 'hey'
+b = 'yo'
+a += b
+print(a)
