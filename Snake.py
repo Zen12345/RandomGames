@@ -111,7 +111,7 @@ while not done:
                 stored_coords.append(stored_coords[-1])
             x_apple, y_apple = getRandomApple() # if apple is eaten, creating new random coords for apple  
         for x in range(len(stored_coords) - 1, 0, -1): #moving coord down the stored_coords list
-            stored_coords[x] = stored_coords[x- 1]
+            stored_coords[x] = list(stored_coords[x- 1])
         for x in range(1,len(stored_coords)): # drawing the position of where the block ahead is one loop ago
             pygame.draw.rect(screen, LAWNGREEN, pygame.Rect(x_coord_list[stored_coords[x][0]], y_coord_list[stored_coords[x][1]], grid_length, grid_length))
         stored_coords[0] = [snake_head.x, snake_head.y]

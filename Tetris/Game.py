@@ -4,6 +4,7 @@ from pygame.locals import *
 from itertools import chain
 import random
 pygame.init()
+#DEFINING CONSTANTS
 done = False
 pygame.display.set_caption("Tetris")
 display_width = 550
@@ -22,7 +23,7 @@ x_coords_next = [(grid_border + (grid_length + grid_border)*n) + 350 for n in ra
 y_coords = [grid_border + (grid_length + grid_border)*n for n in range(20)]
 x_coords.append('exceed')#values for when x coord exceeds the gridarea
 y_coords.append('exceed')#values for when y coord exceeds the gridarea
-print(y_coords)
+
 for y in ([0, ' NEXT'], [230, 'SCORE'], [430, 'LINES']):# the three blue headers
     pygame.draw.rect(screen, colour['BLUE'], pygame.Rect(343, y[0], 550-343, 70))
     myfont = pygame.font.SysFont('Comic Sans MS', 35, True)
@@ -37,6 +38,7 @@ class Block:
         self.rotation = 0
         self.colour = block_colours[block_type]
         self.stored_coord_values = []
+        self.stored_coords = []
     def moveDown(self):
         self.y += 1
     def moveLeft(self):
@@ -59,7 +61,7 @@ class Block:
                 return False
             for y_pos, y_data in enumerate(game_state): #check for collision with other blocks
                 for x_pos, x_data in enumerate(y_data):
-                    if x_data[0] == 1 and y_pos == y and x_pos == x:
+                    if x_data and y_pos == y and x_pos == x:
                         if self.rotation == 0:
                             self.rotation = 3
                         else:
@@ -78,8 +80,10 @@ class Block:
             else: # all the other blocks
                 if x == -1:
                     self.moveRight()
+                    break
                 elif x == 10:
                     self.moveLeft()
+                    break
             
         return True
     def draw(self):
@@ -95,7 +99,7 @@ class Block:
 
             return True # if it hits grid walls
         for x, y in self.coords:
-            if game_state[y][x][0] == 1: #if it hits another block
+            if game_state[y][x]: #if it hits another block
                 return True
         for coord in self.stored_coord_values: # remove previous area of block
              pygame.draw.rect(screen, colour['DARKSLATEGRAY'], pygame.Rect(coord[0] - grid_border, coord[1]- grid_border, grid_length + grid_border*2 , grid_length + grid_border*2))
@@ -108,8 +112,8 @@ class Block:
 def drawGameBlocks():        
     for y_pos, y in enumerate(game_state): #Redrawing game_state blocks
         for x_pos, x in enumerate(y):
-            if x[0] == 1:
-                drawTetrisBlocks(block_colours[x[1]], x_coords[x_pos], y_coords[y_pos])
+            if x:
+                drawTetrisBlocks(block_colours[x], x_coords[x_pos], y_coords[y_pos])
                 
 def drawTetrisBlocks(block_colour, x, y):
     pygame.draw.rect(screen, colour['BLACK'], pygame.Rect(x - grid_border, y- grid_border, grid_length + grid_border*2 , grid_length + grid_border*2)) #Border
@@ -133,7 +137,7 @@ def checkLose():
     relative_coord = list(chain(*[[(x, y) for (x, pos) in enumerate(row) if pos == 1] for (y, row) in enumerate(block[block_test.block_type][0])])) # creating list of coords of block relative to top left corner of matrix
     coords = [(x + 3, y) for x, y in relative_coord]
     for x, y in coords:
-        if game_state[y][x][0] == 1:
+        if game_state[y][x]:
             return True
 def moveRight():
     block_test.moveRight()
@@ -173,7 +177,7 @@ def startGame():
     past_right = 0
     lines = 0
     score = 0   
-    game_state = [[[0, 0] for y in range(10)] for x in range(20)]
+    game_state = [[0 for _ in range(10)] for _ in range(20)]
     pygame.draw.rect(screen, colour['DARKSLATEGRAY'], pygame.Rect(0, 0, 10*(grid_length + grid_border) + grid_border, 20*(grid_length + grid_border) + grid_border))
     changeScore()
     random_block = createRandomBlock()
@@ -193,7 +197,6 @@ while not done: #game loop
                 buttonAnimation('SALMON')               
                 if event.type == MOUSEBUTTONDOWN:
                     startGame()
-                    print(mos_x, mos_y)
             else:
                 buttonAnimation('RED')
         if event.type == MOVERIGHT:
@@ -202,24 +205,26 @@ while not done: #game loop
             moveLeft()
         if event.type == MOVEDOWN:
             block_test.moveDown()
+            
             if block_test.draw():
-                for x , y in block_test.stored_coords:
-                    game_state[y][x][0] = 1 #1 means there is a block there
-                    game_state[y][x][1] = block_test.block_type # and its corresponding block tpye
-                
+                counter_1 = 1
+                for x_coord , y_coord in block_test.stored_coords:
+                    game_state[y_coord][x_coord] = block_test.block_type
+
                 win_rows = []
                 for y_row, y_data in enumerate(game_state):
                     win_counter = 0
-                    for x_data, _ in y_data:
-                        if x_data == 1:
+                    for x_data in y_data:
+                        if x_data:
                             win_counter += 1
                     if win_counter == 10:
                         win_rows.insert(0, y_row)
                 first_loop = True # to prevent 200ms time wasting for first loop of animation
+                
                 if win_rows: # animation for row clear
                     for _ in range(3): # blinks 3 times
                         for y in win_rows:
-                            for x_pos ,( _ , x_type) in enumerate(game_state[y]):
+                            for x_pos , x_type in enumerate(game_state[y]):
                                 drawTetrisBlocks(block_colours[x_type], x_coords[x_pos], y_coords[y])
                         pygame.display.update()
                         if not first_loop:
@@ -232,20 +237,25 @@ while not done: #game loop
                         pygame.time.wait(200)
                     for row in reversed(win_rows):
                         for x in range(row, 0, -1):
-                            game_state[x] = game_state[x - 1]
-
+                            game_state[x] = list(game_state[x - 1])
+                    
                     pygame.time.set_timer(MOVEDOWN, 700) # to reset keyboard input on new block
                     pygame.event.clear()
                     lines += len(win_rows)
                     score += score_list[len(win_rows) - 1]
                     changeScore()
+                
                 pygame.draw.rect(screen, colour['DARKSLATEGRAY'], pygame.Rect(0, 0, 10*(grid_length + grid_border) + grid_border, 20*(grid_length + grid_border) + grid_border))
                 drawGameBlocks()
                 random_block = createRandomBlock() 
                 block_test = Block(random_block[0])
                 block_test.draw()    
                 drawNextBlock(random_block[1])
-
+                counter += 1
+                print(counter)
+                #block_test = Block('l_block')
+                #block_test.draw()
+                #drawNextBlock('l_block')
                 if checkLose(): #Lose window
                     print('lose')
                     game_end = True
@@ -281,11 +291,12 @@ while not done: #game loop
                     direction = 0
                     past_left = 0
                     pygame.time.set_timer(MOVELEFT, 0)
-        now = pygame.time.get_ticks() # All this is just to get that effect when u move left or right where it moves once then pauses for abit then continues moving
-        if past_left and now - past_left >= 200:
-            pygame.time.set_timer(MOVELEFT, 50)
-            past_left = 0
-        if past_right and now - past_right >= 200:
-            pygame.time.set_timer(MOVERIGHT, 50)
-            past_right = 0
+    now = pygame.time.get_ticks()
+     # All this is just to get that effect when u move left or right where it moves once then pauses for abit then continues moving
+    if past_left and now - past_left >= 150:
+        pygame.time.set_timer(MOVELEFT, 50)
+        past_left = 0
+    if past_right and now - past_right >= 150:
+        pygame.time.set_timer(MOVERIGHT, 50)
+        past_right = 0
     pygame.display.update()
