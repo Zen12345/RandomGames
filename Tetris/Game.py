@@ -19,7 +19,7 @@ screen = pygame.display.set_mode((display_width, display_height))
 screen.fill(colour['DARKSLATEGRAY'])
 pygame.draw.rect(screen, colour['GRAY'], pygame.Rect(333, 0, 10, 663)) # gray divider between game area and score board stuff
 x_coords = [grid_border + (grid_length + grid_border)*n for n in range(10)]
-x_coords_next = [(grid_border + (grid_length + grid_border)*n) + 350 for n in range(5)]
+x_coords_next = [(grid_border + (grid_length + grid_border)*n) + 345 for n in range(5)]
 y_coords = [grid_border + (grid_length + grid_border)*n for n in range(20)]
 x_coords.append('exceed')#values for when x coord exceeds the gridarea
 y_coords.append('exceed')#values for when y coord exceeds the gridarea
@@ -90,11 +90,7 @@ class Block:
         
         self.relative_coord = list(chain(*[[(x, y) for (x, pos) in enumerate(row) if pos == 1] for (y, row) in enumerate(block[self.block_type][self.rotation])])) # creating list of coords of block relative to top left corner of matrix
         self.coords = [(x + self.x, y + self.y) for x, y in self.relative_coord]
-        
-        #print(self.coords)
         self.coord_values = [(x_coords[x + self.x], y_coords[y + self.y]) for x, y in self.relative_coord]
-        #print(self.coord_values)
-        
         if 'exceed' in chain(*self.coord_values):
 
             return True # if it hits grid walls
@@ -130,7 +126,7 @@ def drawNextBlock(block_type_next):
     if block_type_next == 'o_block' or block_type_next == 'i_block':
         coord_values = [(x_coords_next[x + 1], y_coords[y + 2]) for x, y in relative_coord]
     else:
-        coord_values = [(x_coords_next[x + 1]+ 15, y_coords[y + 3]) for x, y in relative_coord]
+        coord_values = [(x_coords_next[x + 1]+ 20, y_coords[y + 3]) for x, y in relative_coord]
     for coord in coord_values: # drawing the moving block
             drawTetrisBlocks(block_colours[block_type_next], coord[0], coord[1])
 def checkLose():
@@ -207,7 +203,7 @@ while not done: #game loop
             block_test.moveDown()
             
             if block_test.draw():
-                counter_1 = 1
+                
                 for x_coord , y_coord in block_test.stored_coords:
                     game_state[y_coord][x_coord] = block_test.block_type
 
@@ -227,7 +223,7 @@ while not done: #game loop
                             for x_pos , x_type in enumerate(game_state[y]):
                                 drawTetrisBlocks(block_colours[x_type], x_coords[x_pos], y_coords[y])
                         pygame.display.update()
-                        if not first_loop:
+                        if not first_loop: 
                             pygame.time.wait(200)
                         first_loop = False
                         for y in win_rows:
@@ -251,13 +247,11 @@ while not done: #game loop
                 block_test = Block(random_block[0])
                 block_test.draw()    
                 drawNextBlock(random_block[1])
-                counter += 1
-                print(counter)
-                #block_test = Block('l_block')
-                #block_test.draw()
-                #drawNextBlock('l_block')
+                
                 if checkLose(): #Lose window
-                    print('lose')
+                    for coord in block_test.coord_values: # draw the last block
+                        drawTetrisBlocks(block_test.colour, coord[0], coord[1])
+                    pygame.display.update()
                     game_end = True
                     pygame.time.set_timer(MOVELEFT, 0)
                     pygame.time.set_timer(MOVEDOWN, 0)
